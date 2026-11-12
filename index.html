@@ -17,9 +17,8 @@ header{padding:28px 16px 12px;text-align:center}h1{font-size:clamp(1.5rem,5vw,2.
 .modal{position:fixed;inset:0;background:#000d;display:none;align-items:center;justify-content:center;padding:14px;z-index:9;overflow:auto}
 .modal.on{display:flex}.box{background:var(--card);border-radius:14px;max-width:760px;width:100%;overflow:hidden}
 .box img{width:100%;max-height:55vh;object-fit:contain;background:#000;display:block}.box .b{padding:16px}
-input,textarea{width:100%;padding:11px;margin:6px 0;background:#0f1115;border:1px solid var(--bd);border-radius:8px;color:var(--tx);font:inherit}
 .btn{display:inline-block;background:var(--ac);color:#fff;border:0;border-radius:8px;padding:11px 18px;cursor:pointer;text-decoration:none;font:inherit;margin:6px 6px 0 0}
-.btn.w{background:#25d366}.btn.g{background:#333}#ok{color:#5fe08a;margin-top:8px}
+.btn.w{background:#25d366}.btn.g{background:#333}
 footer{text-align:center;color:var(--mu);padding:20px;font-size:.85rem}
 </style></head><body>
 <header><h1 id="nom"></h1><p>Mira nuestros trabajos y cotiza el modelo que te guste</p></header>
@@ -27,10 +26,7 @@ footer{text-align:center;color:var(--mu);padding:20px;font-size:.85rem}
 <main class="grid" id="grid"></main>
 <div class="modal" id="m"><div class="box">
 <img id="mi" alt=""><div class="b"><h2 id="mt"></h2><p id="md" style="color:var(--mu);margin:6px 0 10px"></p>
-<div id="f"><input id="n" placeholder="Tu nombre" maxlength="80"><input id="t" placeholder="Tu celular / WhatsApp" maxlength="20" inputmode="tel">
-<textarea id="ms" rows="2" placeholder="Cuéntanos qué necesitas (medidas, ubicación…)" maxlength="500"></textarea>
-<button class="btn" id="env">Quiero una cotización</button><a class="btn w" id="wa" target="_blank" rel="noopener">WhatsApp</a><button class="btn g" id="cl">Cerrar</button></div>
-<p id="ok"></p></div></div></div>
+<a class="btn w" id="wa" target="_blank" rel="noopener">Cotizar por WhatsApp</a><button class="btn g" id="cl">Cerrar</button></div></div></div>
 <footer id="ft"></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
@@ -48,17 +44,9 @@ function draw(){
 }
 $('chips').onclick=e=>{if(e.target.dataset.c){cat=e.target.dataset.c;draw()}};
 $('grid').onclick=e=>{const it=e.target.closest('.it');if(!it)return;cur=all.find(x=>x.id==it.dataset.i);
- $('mi').src=cur.imagen_url;$('mt').textContent=cur.titulo;$('md').textContent=cur.descripcion||"";$('ok').textContent="";$('f').style.display="block";
- $('wa').href=`https://wa.me/${CFG.whatsapp}?text=`+encodeURIComponent(`Hola, me interesa este trabajo: ${cur.titulo}`);$('m').classList.add('on')};
+ $('mi').src=cur.imagen_url;$('mt').textContent=cur.titulo;$('md').textContent=cur.descripcion||"";
+ $('wa').href=`https://wa.me/${CFG.whatsapp}?text=`+encodeURIComponent(`Hola, quiero cotizar este trabajo: ${cur.titulo}`);$('m').classList.add('on')};
 $('cl').onclick=()=>$('m').classList.remove('on');$('m').onclick=e=>{if(e.target.id=='m')$('m').classList.remove('on')};
-$('env').onclick=async()=>{
- const n=$('n').value.trim(),t=$('t').value.trim();
- if(n.length<2||t.length<6){$('ok').style.color="#ff8a8a";$('ok').textContent="Escribe tu nombre y un celular válido.";return}
- $('env').disabled=true;
- const {error}=await sb.from('galeria_leads').insert({nombre:n,telefono:t,mensaje:$('ms').value.trim()||null,trabajo_id:cur?.id||null});
- $('env').disabled=false;$('ok').style.color=error?"#ff8a8a":"#5fe08a";
- $('ok').textContent=error?"No se pudo enviar. Escríbenos por WhatsApp.":"¡Listo! Te contactaremos pronto.";
- if(!error){$('f').style.display="none";$('n').value=$('t').value=$('ms').value=""}};
 sb.from('galeria_trabajos').select('*').eq('visible',true).order('orden').order('created_at',{ascending:false})
  .then(({data})=>{all=data||[];draw()});
 </script></body></html>
