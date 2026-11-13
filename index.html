@@ -67,9 +67,11 @@ const wa=t=>`https://wa.me/${CFG.whatsapp}?text=`+encodeURIComponent(t);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 $('yr').textContent=new Date().getFullYear();
 $('hw').href=$('fab').href=$('fw').href=wa("Hola, quiero cotizar un trabajo");
+const CATS=["Vinil","Gigantografías","Stickers","Backing Publicitario","Roll Screen","Corpóreos","Parante de metal","Toldos Publicitarios","Plumas Publicitarias","Banderolas","Cuadro Selfie","Etiquetas","Folder Corporativo","Fotocheck","Módulos publicitarios","Parante araña","Ruleta publicitaria","Señalética","Otros"];
 let all=[],cat="Todos",view=[],idx=0,last=null;
 function draw(){
- const cs=["Todos",...new Set(all.map(x=>x.categoria))];
+ const ord=c=>{const i=CATS.indexOf(c);return i<0?99:i};
+ const cs=["Todos",...[...new Set(all.map(x=>x.categoria))].sort((a,b)=>ord(a)-ord(b)||a.localeCompare(b))];
  $('chips').innerHTML=cs.length>2?cs.map(c=>`<button class="chip" aria-pressed="${c==cat}" data-c="${esc(c)}">${esc(c)}</button>`).join(""):"";
  view=all.filter(x=>cat=="Todos"||x.categoria==cat);
  $('grid').innerHTML=view.map((x,i)=>`<button class="it" data-i="${i}" aria-label="Ver ${esc(x.titulo)}"><img loading="lazy" decoding="async" src="${esc(x.miniatura_url||x.imagen_url)}" alt="${esc(x.titulo)}"><span><b>${esc(x.titulo)}</b><small>${esc(x.categoria)}</small></span></button>`).join("")||'<p class="msg">Pronto subiremos nuevos trabajos.</p>';
