@@ -43,7 +43,7 @@ input[type=file]{padding:9px}input[type=checkbox]{width:20px;min-height:20px;mar
 <main class="wrap">
 <section class="card" aria-labelledby="h1s"><h2 id="h1s">Subir trabajo</h2>
 <label for="ti">Título</label><input id="ti" placeholder="Ej: Letrero luminoso 3D" maxlength="120">
-<label for="ca">Categoría</label><select id="ca"></select>
+<label for="ca">Categoría</label><select id="ca"></select><input id="cn1" placeholder="Escribe la nueva categoría" maxlength="40" aria-label="Nueva categoría" hidden>
 <label for="de">Descripción (opcional)</label><textarea id="de" rows="2"></textarea>
 <label for="fi">Fotos (puedes elegir varias; se comprimen solas)</label><input id="fi" type="file" accept="image/*" multiple>
 <button class="b" id="sub">Subir</button><p id="msg" role="status" aria-live="polite"></p></section>
@@ -51,7 +51,7 @@ input[type=file]{padding:9px}input[type=checkbox]{width:20px;min-height:20px;mar
 <div class="lb" id="ed" role="dialog" aria-modal="true" aria-labelledby="eh"><div class="card">
 <h2 id="eh">Editar trabajo</h2>
 <label for="et">Título</label><input id="et" maxlength="120">
-<label for="ec">Categoría</label><select id="ec"></select>
+<label for="ec">Categoría</label><select id="ec"></select><input id="cn2" placeholder="Escribe la nueva categoría" maxlength="40" aria-label="Nueva categoría" hidden>
 <label for="edd">Descripción</label><textarea id="edd" rows="3"></textarea>
 <label for="eo">Orden (el número menor aparece primero)</label><input id="eo" type="number" inputmode="numeric">
 <label for="ef">Cambiar foto (opcional)</label><input id="ef" type="file" accept="image/*">
@@ -65,7 +65,12 @@ const $=i=>document.getElementById(i);let sb=null,works=[],cur=null,last=null;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const client=t=>supabase.createClient(URL_,KEY,{global:{headers:{'x-client-info':'seven:'+t}},auth:{persistSession:false}});
 const CATS=["Vinil","Gigantografías","Stickers","Backing Publicitario","Roll Screen","Corpóreos","Parante de metal","Toldos Publicitarios","Plumas Publicitarias","Banderolas","Cuadro Selfie","Etiquetas","Folder Corporativo","Fotocheck","Módulos publicitarios","Parante araña","Ruleta publicitaria","Señalética","Otros"];
-function opts(id,val){const l=val&&!CATS.includes(val)?[...CATS,val]:CATS;$(id).innerHTML=(val?'':'<option value="">Elige una categoría…</option>')+l.map(c=>`<option>${esc(c)}</option>`).join("");if(val)$(id).value=val}
+let extra=[],pend='';
+function opts(id,val){const l=[...CATS,...extra.filter(c=>!CATS.includes(c))];if(val&&!l.includes(val))l.push(val);
+ $(id).innerHTML=(val?'':'<option value="">Elige una categoría…</option>')+l.map(c=>`<option>${esc(c)}</option>`).join("")+'<option value="__nueva">+ Agregar otra categoría…</option>';if(val)$(id).value=val}
+function catVal(s,i){return $(s).value=='__nueva'?$(i).value.trim():$(s).value}
+function tog(s,i){$(i).hidden=$(s).value!='__nueva';if(!$(i).hidden)$(i).focus()}
+$('ca').onchange=()=>tog('ca','cn1');$('ec').onchange=()=>tog('ec','cn2');
 opts('ca','');
 const path=u=>u.split('/galeria/')[1];
 async function start(t){sb=client(t);$('lg').hidden=true;$('ap').hidden=false;await load()}
@@ -89,29 +94,31 @@ async function up(f){
  return{imagen_url:pu(`g/${id}.webp`),miniatura_url:pu(`g/${id}_t.webp`)}}
 function say(t,e){$('msg').textContent=t;$('msg').className=e?'e':''}
 $('sub').onclick=async()=>{
- const fs=[...$('fi').files],ti=$('ti').value.trim(),ca=$('ca').value;
+ const fs=[...$('fi').files],ti=$('ti').value.trim(),ca=catVal('ca','cn1');
  if(!fs.length||!ti||!ca){say("Falta el título, la categoría o la foto.",1);return}
  $('sub').disabled=true;
  try{for(const [i,f] of fs.entries()){say(`Subiendo ${i+1} de ${fs.length}…`);
   const u=await up(f),r=await sb.from('galeria_trabajos').insert({titulo:fs.length>1?`${ti} ${i+1}`:ti,categoria:ca,descripcion:$('de').value.trim()||null,...u});
   if(r.error)throw r.error}
-  say("¡Subido!");$('fi').value=$('ti').value=$('de').value=""}
+  say("¡Subido!");pend=ca;$('cn1').hidden=true;$('cn1').value="";$('fi').value=$('ti').value=$('de').value=""}
  catch(e){say("Error: "+(e.message||e),1)}
  $('sub').disabled=false;load()};
 async function load(){
  const a=await sb.from('galeria_trabajos').select('*').order('orden').order('created_at',{ascending:false});
  if(a.error){sessionStorage.removeItem('gt');alert('Tu sesión venció. Ingresa de nuevo.');location.reload();return}
  works=a.data;$('cn').textContent=`(${works.length})`;
+ extra=works.map(x=>x.categoria);{const cv=pend||$('ca').value;pend='';opts('ca',cv&&cv!='__nueva'?cv:'');if(cv=='__nueva')$('ca').value=cv}
   $('ls').innerHTML=works.map(x=>`<div class="row"><img src="${esc(x.miniatura_url)}" alt=""><div class="t"><b>${esc(x.titulo)}</b><small>${esc(x.categoria)} · orden ${x.orden}</small><span class="st ${x.visible?'on':'off'}">${x.visible?'Visible':'Oculto'}</span></div>
  <div class="ac"><button class="b s" data-e="${x.id}">Editar</button><button class="b s" data-v="${x.id}">${x.visible?'Ocultar':'Mostrar'}</button><button class="b r" data-d="${x.id}">Borrar</button></div></div>`).join("")||'<p class="hint">Aún no hay trabajos. Sube el primero arriba.</p>'}
-function openEd(x){last=document.activeElement;cur=x;$('et').value=x.titulo;opts('ec',x.categoria);$('edd').value=x.descripcion||"";$('eo').value=x.orden;$('ev').checked=x.visible;$('ef').value="";$('em').textContent="";$('ed').classList.add('on');$('et').focus()}
+function openEd(x){last=document.activeElement;cur=x;$('et').value=x.titulo;opts('ec',x.categoria);$('cn2').hidden=true;$('cn2').value="";$('edd').value=x.descripcion||"";$('eo').value=x.orden;$('ev').checked=x.visible;$('ef').value="";$('em').textContent="";$('ed').classList.add('on');$('et').focus()}
 function closeEd(){$('ed').classList.remove('on');last&&last.focus()}
 $('ca2').onclick=closeEd;$('ed').onclick=e=>{if(e.target.id=='ed')closeEd()};
 document.addEventListener('keydown',e=>{if(e.key=='Escape'&&$('ed').classList.contains('on'))closeEd()});
 $('sv').onclick=async()=>{
  const t=$('et').value.trim();if(!t){$('em').textContent="El título no puede estar vacío.";return}
+ if(!catVal('ec','cn2')){$('em').textContent="Elige o escribe una categoría.";return}
  $('sv').disabled=true;$('em').textContent="Guardando…";
- try{const u={titulo:t,categoria:$('ec').value,descripcion:$('edd').value.trim()||null,orden:parseInt($('eo').value)||0,visible:$('ev').checked},f=$('ef').files[0];
+ try{const u={titulo:t,categoria:catVal('ec','cn2'),descripcion:$('edd').value.trim()||null,orden:parseInt($('eo').value)||0,visible:$('ev').checked},f=$('ef').files[0];
   if(f)Object.assign(u,await up(f));
   const r=await sb.from('galeria_trabajos').update(u).eq('id',cur.id);if(r.error)throw r.error;
   if(f)await sb.storage.from('galeria').remove([path(cur.imagen_url),path(cur.miniatura_url)]);
