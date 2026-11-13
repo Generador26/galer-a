@@ -67,7 +67,7 @@ const client=t=>supabase.createClient(URL_,KEY,{global:{headers:{'x-client-info'
 const CATS=["Vinil","Gigantografías","Stickers","Backing Publicitario","Roll Screen","Corpóreos","Parante de metal","Toldos Publicitarios","Plumas Publicitarias","Banderolas","Cuadro Selfie","Etiquetas","Folder Corporativo","Fotocheck","Módulos publicitarios","Parante araña","Ruleta publicitaria","Señalética","Otros"];
 let extra=[],pend='';
 function opts(id,val){const l=[...CATS,...extra.filter(c=>!CATS.includes(c))];if(val&&!l.includes(val))l.push(val);
- $(id).innerHTML=(val?'':'<option value="">Elige una categoría…</option>')+'<option value="__nueva">+ Agregar otra categoría…</option>'+l.map(c=>`<option>${esc(c)}</option>`).join("");if(val)$(id).value=val}
+ $(id).innerHTML=(val?'':'<option value="" disabled selected hidden>Elige una categoría…</option>')+'<option value="__nueva">+ Agregar otra categoría…</option>'+l.map(c=>`<option>${esc(c)}</option>`).join("");if(val)$(id).value=val}
 function catVal(s,i){return $(s).value=='__nueva'?$(i).value.trim():$(s).value}
 function tog(s,i){$(i).hidden=$(s).value!='__nueva';if(!$(i).hidden)$(i).focus()}
 $('ca').onchange=()=>tog('ca','cn1');$('ec').onchange=()=>tog('ec','cn2');
