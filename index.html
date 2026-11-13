@@ -23,6 +23,11 @@ h1,h2{font-family:'Bebas Neue',Impact,sans-serif;font-weight:400;letter-spacing:
 .gh{background:var(--ac);color:#fff}.gh:hover{background:var(--ac2)}
 svg{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 #galeria{scroll-margin-top:12px;padding-top:28px}
+.sf{display:flex;gap:10px;max-width:1100px;margin:0 auto;padding:0 16px 16px}
+.sf input{flex:1;min-width:0;min-height:48px;padding:0 14px;border:1px solid var(--bd);border-radius:10px;background:#fff;color:var(--fg);font:inherit}
+.sf input:focus{border-color:var(--ac);outline:2px solid var(--ac)}.sf .btn{background:var(--ac);color:#fff}.sf .btn:hover{background:var(--ac2)}
+@media(max-width:420px){.sf .btn span{display:none}.sf .btn{padding:0 16px}}
+.msg a{color:var(--ac2);font-weight:600}
 .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:0 16px 20px;max-width:1100px;margin:auto}
 .chip{min-height:44px;padding:0 18px;border-radius:99px;border:1px solid var(--bd);background:var(--card);color:var(--fg);font:600 .95rem 'Source Sans 3',sans-serif;transition:background .18s}
 .chip:hover{background:var(--mu)}.chip[aria-pressed=true]{background:var(--ac);border-color:var(--ac);color:#fff}
@@ -47,6 +52,7 @@ footer{text-align:center;color:var(--mf);padding:8px 16px 90px;font-size:.95rem}
 <p>Mira los trabajos que hemos realizado y cotiza el modelo que te guste directo por WhatsApp.</p>
 <div class="acts"><a class="btn wa" id="hw" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>Cotizar por WhatsApp</a><a class="btn gh" href="#galeria">Ver trabajos</a></div></header>
 <section id="galeria" aria-label="Galería de trabajos">
+<form class="sf" id="sf" role="search"><label class="sr" for="q">Buscar trabajos</label><input id="q" type="search" placeholder="Buscar …" autocomplete="off" maxlength="60"><button class="btn" type="submit" aria-label="Buscar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span>Buscador</span></button></form>
 <div class="chips" id="chips" role="group" aria-label="Filtrar por categoría"></div>
 <main class="grid" id="grid" aria-live="polite"><div class="sk"></div><div class="sk"></div><div class="sk"></div></main></section>
 <footer>© <span id="yr"></span> SEVEN · WhatsApp <a id="fw" target="_blank" rel="noopener">+591 76913792</a></footer>
@@ -68,13 +74,15 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 $('yr').textContent=new Date().getFullYear();
 $('hw').href=$('fab').href=$('fw').href=wa("Hola, quiero cotizar un trabajo");
 const CATS=["Vinil","Gigantografías","Stickers","Backing Publicitario","Roll Screen","Corpóreos","Parante de metal","Toldos Publicitarios","Plumas Publicitarias","Banderolas","Cuadro Selfie","Etiquetas","Folder Corporativo","Fotocheck","Módulos publicitarios","Parante araña","Ruleta publicitaria","Señalética","Otros"];
-let all=[],cat="Todos",view=[],idx=0,last=null;
+const norm=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+let q="",all=[],cat="Todos",view=[],idx=0,last=null;
 function draw(){
  const ord=c=>{const i=CATS.indexOf(c);return i<0?99:i};
  const cs=["Todos",...[...new Set(all.map(x=>x.categoria))].sort((a,b)=>ord(a)-ord(b)||a.localeCompare(b))];
  $('chips').innerHTML=cs.length>2?cs.map(c=>`<button class="chip" aria-pressed="${c==cat}" data-c="${esc(c)}">${esc(c)}</button>`).join(""):"";
- view=all.filter(x=>cat=="Todos"||x.categoria==cat);
- $('grid').innerHTML=view.map((x,i)=>`<button class="it" data-i="${i}" aria-label="Ver ${esc(x.titulo)}"><img loading="lazy" decoding="async" src="${esc(x.miniatura_url||x.imagen_url)}" alt="${esc(x.titulo)}"><span><b>${esc(x.titulo)}</b><small>${esc(x.categoria)}</small></span></button>`).join("")||'<p class="msg">Pronto subiremos nuevos trabajos.</p>';
+ const ws=norm(q).split(/\s+/).filter(Boolean);
+ view=all.filter(x=>(cat=="Todos"||x.categoria==cat)&&ws.every(w=>norm(x.titulo+" "+x.categoria+" "+x.descripcion).includes(w)));
+ $('grid').innerHTML=view.map((x,i)=>`<button class="it" data-i="${i}" aria-label="Ver ${esc(x.titulo)}"><img loading="lazy" decoding="async" src="${esc(x.miniatura_url||x.imagen_url)}" alt="${esc(x.titulo)}"><span><b>${esc(x.titulo)}</b><small>${esc(x.categoria)}</small></span></button>`).join("")||(ws.length?`<p class="msg">No encontramos “${esc(q.trim())}”. <a href="${wa("Hola, busco: "+q.trim())}" target="_blank" rel="noopener">Escríbenos por WhatsApp</a> y cotizamos lo que necesitas.</p>`:'<p class="msg">Pronto subiremos nuevos trabajos.</p>');
 }
 function show(i){
  idx=(i+view.length)%view.length;const x=view[idx];
@@ -83,6 +91,8 @@ function show(i){
  $('pv').hidden=$('nx').hidden=view.length<2}
 function open_(i){last=document.activeElement;show(i);$('lb').classList.add('on');document.body.style.overflow='hidden';$('cl').focus()}
 function close_(){$('lb').classList.remove('on');document.body.style.overflow='';last&&last.focus()}
+$('q').oninput=()=>{q=$('q').value;draw()};
+$('sf').onsubmit=e=>{e.preventDefault();q=$('q').value;draw();$('grid').scrollIntoView()};
 $('chips').onclick=e=>{const c=e.target.closest('.chip');if(c){cat=c.dataset.c;draw()}};
 $('grid').onclick=e=>{const it=e.target.closest('.it');if(it)open_(+it.dataset.i)};
 $('cl').onclick=close_;$('pv').onclick=()=>show(idx-1);$('nx').onclick=()=>show(idx+1);
