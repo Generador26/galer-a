@@ -17,8 +17,8 @@ h1,h2{font-family:'Bebas Neue',Impact,sans-serif;font-weight:400;letter-spacing:
 .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:20px;margin-bottom:16px}
 .login .card{width:100%;max-width:380px}.login h1{font-size:2rem;text-align:center;margin:6px 0 10px}.lg{display:block;width:min(70%,240px);height:auto;margin:0 auto}
 label{display:block;font-weight:600;font-size:.92rem;margin-top:10px}
-input,textarea{width:100%;min-height:46px;padding:10px 12px;margin-top:4px;background:#fff;border:1px solid var(--bd);border-radius:10px;color:var(--fg);font:inherit}
-input:focus,textarea:focus{border-color:var(--ac);outline:2px solid var(--ac);outline-offset:0}
+input,textarea,select{width:100%;min-height:46px;padding:10px 12px;margin-top:4px;background:#fff;border:1px solid var(--bd);border-radius:10px;color:var(--fg);font:inherit}
+input:focus,textarea:focus,select:focus{border-color:var(--ac);outline:2px solid var(--ac);outline-offset:0}
 input[type=file]{padding:9px}input[type=checkbox]{width:20px;min-height:20px;margin:0 8px 0 0;vertical-align:middle}
 .b{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;margin-top:12px;border-radius:10px;border:1px solid transparent;background:var(--ac);color:#fff;font:600 1rem 'Source Sans 3',sans-serif;text-decoration:none;transition:background .18s}
 .b:hover{background:var(--ac2)}.b:disabled{opacity:.6;cursor:wait}.b.s{background:#fff;color:var(--fg);border-color:var(--bd);margin:0}.b.s:hover{background:var(--mu)}.b.r{background:#fff;color:var(--rd);border-color:var(--rd);margin:0}.b.r:hover{background:#FDECEA}
@@ -43,16 +43,15 @@ input[type=file]{padding:9px}input[type=checkbox]{width:20px;min-height:20px;mar
 <main class="wrap">
 <section class="card" aria-labelledby="h1s"><h2 id="h1s">Subir trabajo</h2>
 <label for="ti">Título</label><input id="ti" placeholder="Ej: Letrero luminoso 3D" maxlength="120">
-<label for="ca">Categoría</label><input id="ca" list="cats" placeholder="Ej: Letreros, Lonas, Vinilos" maxlength="40">
+<label for="ca">Categoría</label><select id="ca"></select>
 <label for="de">Descripción (opcional)</label><textarea id="de" rows="2"></textarea>
 <label for="fi">Fotos (puedes elegir varias; se comprimen solas)</label><input id="fi" type="file" accept="image/*" multiple>
 <button class="b" id="sub">Subir</button><p id="msg" role="status" aria-live="polite"></p></section>
 <section class="card" aria-labelledby="h2s"><h2 id="h2s">Trabajos <small id="cn" class="hint"></small></h2><div id="ls"></div></section></main></div>
-<datalist id="cats"></datalist>
 <div class="lb" id="ed" role="dialog" aria-modal="true" aria-labelledby="eh"><div class="card">
 <h2 id="eh">Editar trabajo</h2>
 <label for="et">Título</label><input id="et" maxlength="120">
-<label for="ec">Categoría</label><input id="ec" list="cats" maxlength="40">
+<label for="ec">Categoría</label><select id="ec"></select>
 <label for="edd">Descripción</label><textarea id="edd" rows="3"></textarea>
 <label for="eo">Orden (el número menor aparece primero)</label><input id="eo" type="number" inputmode="numeric">
 <label for="ef">Cambiar foto (opcional)</label><input id="ef" type="file" accept="image/*">
@@ -65,6 +64,9 @@ const URL_="https://nphlvrbbgnlexkzvzmwa.supabase.co",KEY="sb_publishable_GXblVl
 const $=i=>document.getElementById(i);let sb=null,works=[],cur=null,last=null;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const client=t=>supabase.createClient(URL_,KEY,{global:{headers:{'x-client-info':'seven:'+t}},auth:{persistSession:false}});
+const CATS=["Vinil","Gigantografías","Stickers","Backing Publicitario","Roll Screen","Corpóreos","Parante de metal","Toldos Publicitarios","Plumas Publicitarias","Banderolas","Cuadro Selfie","Etiquetas","Folder Corporativo","Fotocheck","Módulos publicitarios","Parante araña","Ruleta publicitaria","Señalética","Otros"];
+function opts(id,val){const l=val&&!CATS.includes(val)?[...CATS,val]:CATS;$(id).innerHTML=(val?'':'<option value="">Elige una categoría…</option>')+l.map(c=>`<option>${esc(c)}</option>`).join("");if(val)$(id).value=val}
+opts('ca','');
 const path=u=>u.split('/galeria/')[1];
 async function start(t){sb=client(t);$('lg').hidden=true;$('ap').hidden=false;await load()}
 $('go').onclick=async()=>{$('le').textContent="";
@@ -87,8 +89,8 @@ async function up(f){
  return{imagen_url:pu(`g/${id}.webp`),miniatura_url:pu(`g/${id}_t.webp`)}}
 function say(t,e){$('msg').textContent=t;$('msg').className=e?'e':''}
 $('sub').onclick=async()=>{
- const fs=[...$('fi').files],ti=$('ti').value.trim(),ca=$('ca').value.trim()||'General';
- if(!fs.length||!ti){say("Falta el título o la foto.",1);return}
+ const fs=[...$('fi').files],ti=$('ti').value.trim(),ca=$('ca').value;
+ if(!fs.length||!ti||!ca){say("Falta el título, la categoría o la foto.",1);return}
  $('sub').disabled=true;
  try{for(const [i,f] of fs.entries()){say(`Subiendo ${i+1} de ${fs.length}…`);
   const u=await up(f),r=await sb.from('galeria_trabajos').insert({titulo:fs.length>1?`${ti} ${i+1}`:ti,categoria:ca,descripcion:$('de').value.trim()||null,...u});
@@ -100,17 +102,16 @@ async function load(){
  const a=await sb.from('galeria_trabajos').select('*').order('orden').order('created_at',{ascending:false});
  if(a.error){sessionStorage.removeItem('gt');alert('Tu sesión venció. Ingresa de nuevo.');location.reload();return}
  works=a.data;$('cn').textContent=`(${works.length})`;
- $('cats').innerHTML=[...new Set(works.map(x=>x.categoria))].map(c=>`<option value="${esc(c)}">`).join("");
- $('ls').innerHTML=works.map(x=>`<div class="row"><img src="${esc(x.miniatura_url)}" alt=""><div class="t"><b>${esc(x.titulo)}</b><small>${esc(x.categoria)} · orden ${x.orden}</small><span class="st ${x.visible?'on':'off'}">${x.visible?'Visible':'Oculto'}</span></div>
+  $('ls').innerHTML=works.map(x=>`<div class="row"><img src="${esc(x.miniatura_url)}" alt=""><div class="t"><b>${esc(x.titulo)}</b><small>${esc(x.categoria)} · orden ${x.orden}</small><span class="st ${x.visible?'on':'off'}">${x.visible?'Visible':'Oculto'}</span></div>
  <div class="ac"><button class="b s" data-e="${x.id}">Editar</button><button class="b s" data-v="${x.id}">${x.visible?'Ocultar':'Mostrar'}</button><button class="b r" data-d="${x.id}">Borrar</button></div></div>`).join("")||'<p class="hint">Aún no hay trabajos. Sube el primero arriba.</p>'}
-function openEd(x){last=document.activeElement;cur=x;$('et').value=x.titulo;$('ec').value=x.categoria;$('edd').value=x.descripcion||"";$('eo').value=x.orden;$('ev').checked=x.visible;$('ef').value="";$('em').textContent="";$('ed').classList.add('on');$('et').focus()}
+function openEd(x){last=document.activeElement;cur=x;$('et').value=x.titulo;opts('ec',x.categoria);$('edd').value=x.descripcion||"";$('eo').value=x.orden;$('ev').checked=x.visible;$('ef').value="";$('em').textContent="";$('ed').classList.add('on');$('et').focus()}
 function closeEd(){$('ed').classList.remove('on');last&&last.focus()}
 $('ca2').onclick=closeEd;$('ed').onclick=e=>{if(e.target.id=='ed')closeEd()};
 document.addEventListener('keydown',e=>{if(e.key=='Escape'&&$('ed').classList.contains('on'))closeEd()});
 $('sv').onclick=async()=>{
  const t=$('et').value.trim();if(!t){$('em').textContent="El título no puede estar vacío.";return}
  $('sv').disabled=true;$('em').textContent="Guardando…";
- try{const u={titulo:t,categoria:$('ec').value.trim()||'General',descripcion:$('edd').value.trim()||null,orden:parseInt($('eo').value)||0,visible:$('ev').checked},f=$('ef').files[0];
+ try{const u={titulo:t,categoria:$('ec').value,descripcion:$('edd').value.trim()||null,orden:parseInt($('eo').value)||0,visible:$('ev').checked},f=$('ef').files[0];
   if(f)Object.assign(u,await up(f));
   const r=await sb.from('galeria_trabajos').update(u).eq('id',cur.id);if(r.error)throw r.error;
   if(f)await sb.storage.from('galeria').remove([path(cur.imagen_url),path(cur.miniatura_url)]);
